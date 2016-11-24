@@ -108,6 +108,141 @@ Segment TEST), El algoritmo trabaja en un cırculo discretizado alrededor del
 punto candidato p. P es esquina si existe un arco contiguo de al menos 9
 pıxeles que sean mas brillantes o mas oscuros que p por un umbral T.
 
+![fast image](fast.png)
+
+## Descriptores locales de Caracteristicas
+
+Luego de identificar los puntos de interes, se debe encontrar una
+descripcion que se pueda usar para identificarlos entre imagenes.
+Estos descriptores apuntan a capturar la textura de la vecindad local
+y a ser invariantes a cambios de iluminacion, escala y rotacion.
+
+#### Descriptores locales - Patch de imagen
+
+La descripcion mas directa de un punto caracterıstico es la **vecindad** de
+este (image patch). Para seguimiento, se asume que la apariencia del patch
+casi no ha variado entre frames.
+
+#### Descriptores locales - SURF
+
+Inspirado en SIFT pero **es mas robusto** ante ciertas transformaciones. **Utiliza
+Hessiano Rapido** .La idea de estos descriptores es encontrrar correspondencia
+entre imagenes del mismo tipo.
+
+Caracteristicas puntos de ineteres:
+- Se usa hessiano rapido
+- se aplica:
+ $C(x,y,σ) = D_{xx}(σ)D_{yy}(σ) - (0.9D_{xy}(σ))^2 ≈ det[H(x,y,σ)]$
+ donde D_{xx}, D_{yy}, D_{xy} resultan de convolucion entre imagen y los filtros de la imagen
+- Factor 0.9 se agrega para mejorar aproximacion a $det[H(x, y, σ)]$ .
+- Se aplica non-maximum suppression a vecindad de 3 × 3 × 3 y refinamiento
+ subpixel
+- Candidatos con $c < T$ (umbral) se rechazan
+- SURF menos sensible al ruido
+
+*Orientacion*: Respecto a la orientacion de las imagenes, es "inmune" a esta.
+Se utilizan filtros de HAAR para generar una respuesta que es ponderada utilizando una Gaussiana segun distancia al punto de ineteres para todas kas muestras en
+la vecindad circular.
+
+Pasos del Descriptor (SURF):
+- constru´ır region cuadrada centrada en el punto de interes y orientada
+seguun la orientaci´on seleccionada previamente.
+- Tamaño de la ventana de 20s.
+- Region dividida en 4 × 4 sub-regiones cuadradas.
+- Para cada sub-region, computar filtros de Haar en 5 × 5 puntos de
+muestra equiespaciados.
+- Respuestas horizontal dx y vertical dy , ponderadas por Gaussiana
+centrada en punto de interes.
+- Filtros Haar orientados seg´un orientaci´on de la region.
+- Cada respuesta dx y dy es sumada sobre cada sub-region.
+- Tambien se calculan |dx| y |dy| (polaridad de cambios de
+intensidad). Entonces, cada sub-region representada por vector
+descriptor $v$de 4D:
+$$ v = (\sum d_{x}, \sum d_{y},\sum |d_{x}|, \sum |d_y|) $$
+
+![fast image](SURF.png)
+
+- Descriptor final se obtiene concatenando $v$ para todas las 4 × 4
+sub-regiones (descriptor de largo 64).
+- Filtros de Haar invariantes a offset de iluminacion.
+- Invarianza al contraste normalizando el descriptor final a vector
+unitario.
+
+
+## Template Matching
+
+Tecnica para encontrar areas de una imagen que coinciden (match; son similares)
+a una imagen template (patch). Se necesita imagen fuente y template.
+
+![template Matching](template.png)
+
+Para identificar el area coincidente, es necesario comparar la imagen
+template (T) con la imagen fuente (I), deslizandola: Mover el patch un pixel a la vez (de izquierda a derecha y de arriba a abajo). En cada posici´on, se calcula una
+metrica para representar cuan bien o mal existe coincidencia (o cuan similar
+es el patch a esa area en particular de la imagen fuente).
+
+## Feature Matching
+
+consiste en buscar un objeto o un conjunto de objetos en una imagen. Metodos
+de base **KD-TREES** , metodos populares **BBF** y **FLANN**.
+
+#### KD-Tress
+
+K-dimensional tree es una a estructura de datos de particionamiento espacial para organizar puntos en un espacio k-dimensional. El kd-tree es un ´arbol binario
+donde cada nodo es un punto k-dimensional. Cada nodo no hoja genera implicitamente un hiperplano de separacion que divide el espacio en dos (half-spaces). Los puntos a la izquierda de un hiperplano representados por sub-arbol izquierdo y los puntos a la derecha por sub-arbol derecho.
+
+![kd-tree](kd-tree.png)
+
+- **NN Search**: Busqueda de vecino mas cercano (Nearest Neighbor Search) en
+kd-trees
+	- Comenzando de la raız, descender por el arbol testeando a que lado de
+	 cada nodo se encuentra.
+	- Ir actualizando la distancia mas cercana en la medida que se avanza por
+	  el arbol, hasta llegar a un nodo hoja.
+	- Comenzar ascenso, chequeando si pueden haber puntos al otro lado del  	plano de corte del nodo actual. Se hace intersectando el hiperplano de corte con  una hiperesfera de radio la distancia actualmente mas cercana,
+	centrada en el punto buscado:
+		- Si hiperesfera cruza el plano (verificable en direccion de eje de
+      corte), podrıa haber puntos mas cercanos al otro lado, y el
+      algoritmo desciende por la otra rama (siguiendo procedimiento
+      previo).
+	  - Si no cruza, se continua ascenso, descartando la otra rama.
+  - Termina cuando vuelve a la raız.
+
+![nn-search](nn-search.png)
+
+Como ayuda extra:
+[Video de Kd-Tree](https://www.youtube.com/watch?v=Y4ZgLlDfKDg)
+
+Complejidad:
+
+| |promedio|peor caso|
+| :------- | :-------: | :-------: |
+|Construccion | $O(kn·log(n))$ | $O(kn·log(n))$ |
+|Busqueda     | $O(log (n))$| $O(n)$ |
+
+#### KD-Tress - Best Bin First (BBF)
+
+Encuentra solucion aproximada a NN Search en espacios de muy alta dimensionalidad. Es un variante de kd-tree aproximado que retorna vecino mas cercano en la mayoria de los casos. Se diferencia de KD-Tree pues en el Ascenso (regreso) en el arbol se realiza mediante una cola de prioridad basada en cercania. BBF es mas rapido que kd-tree.
+
+#### KD-Tress - FLANN
+
+Algoritmo que utiliza los mejores dos algoritmos encontrados: **hierarchical k-means tree modificado** y **randomized kd-trees**.
+
+- **Randomized KD-Tress**:
+	- Se crean varios arboles
+	- Se escoge la dimensi´on de corte aleatoriamente entre las primeras $D$
+    dimensiones de mayor varianza.
+	- En FLANN utilizan D = 5.
+	- Para b´usqueda, se mantiene una cola de prioridad entre todos los
+    arboles para que la b´usqueda se ordene seg´un proximidad de los bins.
+
+
+- **Hierarchical k-means Tree**:
+	- Dividir los puntos en cada nivel en K regiones mediante k-means clustering.
+	- Continuar recursivamente para los puntos de cada region.
+	- Detener recursi´on cuando n´umero de puntos en region menor que K
+
+Existe una variante de este ultimo (revisar ppt).
 
 
 ## Flujo Optico
