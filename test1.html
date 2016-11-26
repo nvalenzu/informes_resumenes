@@ -1,0 +1,205 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <script src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<h1 id="resumen-c3-pdi">Resumen C3 PDI</h1>
+<pre><code>(the last chance)</code></pre>
+<h3 id="descripcion-de-objetos">Descripcion de objetos</h3>
+<p>Descriptores locales: Representaciones que describen caracter´ısticas elementales de una vecindad reducida, parte de una regi´on de inter´es como: forma, color, textura o movimiento. Ejemplo de descriptores: SIFT, SURF</p>
+<h3 id="puntos-de-interes">Puntos de interes</h3>
+<ul>
+<li>Detector de esquinas de Harris: Se computa cada punto (x,y) de la imagen mediante la matriz M(x,y). Los valores propios λ1 y λ2 de M son proporcionales a las curvaturas principales de I. Regiones de la imagen se clasifican en:
+<ul>
+<li>uniforme (λ1 y λ2 pequeños),</li>
+<li>region de borde (uno pequeño, uno grande)</li>
+<li>region de esquina (ambos grandes).</li>
+</ul>
+Para evitar computar explıcitamente λ1 y λ2, los autores propusieron un puntaje de esquina:</li>
+</ul>
+<p><span class="math">\(c(x, y) = λ1·λ2 − k·(λ1 +λ2)^2 = det(M(x, y))−k· [trace(M(x, y))]^2\)</span></p>
+<p>Luego, se realiza non-aximum suppression a <span class="math">\(V_8\)</span> y son filtrados los candidatos con una respuesta de menos de una tasa θ de la respuesta m´axima encontrada.</p>
+<ul>
+<li>Good Features to Track de Shi-Tomasi</li>
+</ul>
+<p>Sugieren usar un modelo de traslacion:</p>
+<p><span class="math">\[
+\left(\begin{array}{cc}
+x \\
+y
+\end{array}\right) =
+\left(\begin{array}{cc}
+t_x\\
+t_y
+\end{array}\right) +
+\left(\begin{array}{cc}
+a_{00} &amp; a_{01} \\
+a_{10} &amp; a_{11}
+\end{array}\right)
+\left(\begin{array}{cc}
+X&#39; \\
+Y&#39;
+\end{array}\right) =
+\left(\begin{array}{cc}
+t_x\\
+t_y
+\end{array}\right) +A
+\left(\begin{array}{cc}
+X&#39;\\
+Y&#39;
+\end{array}\right)
+\]</span></p>
+<p>En este caso, <span class="math">\(A = M\)</span> de Harris</p>
+<h3 id="scale-space">Scale Space</h3>
+<p>Teoria formal para manipular estructuras de imagenes a diferentes escalas, representando una imagen como una familia de imagenes suavizadas con un parametro (tamaño del filtro de suavizado). Para una imagen <span class="math">\(f(x, y)\)</span> , su representacion de scale-space lineal (Gaussiana) es una familia de imagenes:</p>
+<p><span class="math">\(L(x, y;t) = g(x, y;t) ∗ f (x, y)\)</span></p>
+<p>con: <span class="math">\(g(x, y;t) = \frac{1}{2πt^{e−(x2+y2)/2t}}\)</span></p>
+<p><span class="math">\(t\)</span> es la varianza del filtro Gaussiano. Si <span class="math">\(t = 0\)</span>, <span class="math">\(L(x, y; 0) = f (x, y)\)</span>.</p>
+<p>En la medida que <span class="math">\(t\)</span> crece, <span class="math">\(L\)</span> es el resultado de suavizar <span class="math">\(f\)</span> con un filtro cada vez mas grande, suprimiendo cada vez m´as detalles en la imagen.</p>
+<h3 id="puntos-de-interees---hessiano-rapido">Puntos de interees - Hessiano rapido</h3>
+<p>Base del descriptor SURF, se basa en el determinante de la matriz Hessiana:</p>
+<p><span class="math">\[
+H(x,y,σ) =
+\left(\begin{array}{cc}
+\frac{\partial^2 }{\partial^2 x}G(σ) * I(x,y) &amp; \frac{\partial}{\partial x} \frac{\partial}{\partial y}G(σ) * I(x,y) \\
+\frac{\partial}{\partial x} \frac{\partial}{\partial y}G(σ) * I(x,y) &amp; \frac{\partial^2 }{\partial^2 y}G(σ) * I(x,y)
+\end{array}\right)
+\]</span></p>
+<h4 id="imagenes-integrales">Imagenes integrales</h4>
+<p>Usada como forma rapida y efectiva para calcular sumas de pıxeles en una imagen (escala de grises). Puede usarse para calcular la intensidad promedio en la imagen. Para cada (x,y) se escribe la suma de todos los pıxeles arriba y a la izquierda, incluyendo al de la posicion original:</p>
+<div class="figure">
+<img src="https://computersciencesource.files.wordpress.com/2010/09/adding_1.png" alt="imagen de cuadritos" />
+<p class="caption">imagen de cuadritos</p>
+</div>
+<div class="figure">
+<img src="https://computersciencesource.files.wordpress.com/2010/09/bigegsat.png" alt="imagen de areas sumadas" />
+<p class="caption">imagen de areas sumadas</p>
+</div>
+<div class="figure">
+<img src="http://1.bp.blogspot.com/--riYD2Dg_Bo/Vczl_NjDw9I/AAAAAAAAA6w/ZbyPMPwR-FA/s1600/Integral_image.png" alt="otro ejemplo" />
+<p class="caption">otro ejemplo</p>
+</div>
+<h2 id="puntos-de-interes---fast">Puntos de interes - FAST</h2>
+<p>Detector de esquinas de alto rendimiento (FAST: Feature from Accelerated Segment TEST), El algoritmo trabaja en un cırculo discretizado alrededor del punto candidato p. P es esquina si existe un arco contiguo de al menos 9 pıxeles que sean mas brillantes o mas oscuros que p por un umbral T.</p>
+<div class="figure">
+<img src="fast.png" alt="fast image" />
+<p class="caption">fast image</p>
+</div>
+<h2 id="descriptores-locales-de-caracteristicas">Descriptores locales de Caracteristicas</h2>
+<p>Luego de identificar los puntos de interes, se debe encontrar una descripcion que se pueda usar para identificarlos entre imagenes. Estos descriptores apuntan a capturar la textura de la vecindad local y a ser invariantes a cambios de iluminacion, escala y rotacion.</p>
+<h4 id="descriptores-locales---patch-de-imagen">Descriptores locales - Patch de imagen</h4>
+<p>La descripcion mas directa de un punto caracterıstico es la <strong>vecindad</strong> de este (image patch). Para seguimiento, se asume que la apariencia del patch casi no ha variado entre frames.</p>
+<h4 id="descriptores-locales---surf">Descriptores locales - SURF</h4>
+<p>Inspirado en SIFT pero <strong>es mas robusto</strong> ante ciertas transformaciones. <strong>Utiliza Hessiano Rapido</strong> .La idea de estos descriptores es encontrrar correspondencia entre imagenes del mismo tipo.</p>
+<p>Caracteristicas puntos de ineteres: - Se usa hessiano rapido - se aplica: <span class="math">\(C(x,y,σ) = D_{xx}(σ)D_{yy}(σ) - (0.9D_{xy}(σ))^2 ≈ det[H(x,y,σ)]\)</span> donde D_{xx}, D_{yy}, D_{xy} resultan de convolucion entre imagen y los filtros de la imagen - Factor 0.9 se agrega para mejorar aproximacion a <span class="math">\(det[H(x, y, σ)]\)</span> . - Se aplica non-maximum suppression a vecindad de 3 × 3 × 3 y refinamiento subpixel - Candidatos con <span class="math">\(c &lt; T\)</span> (umbral) se rechazan - SURF menos sensible al ruido</p>
+<p><em>Orientacion</em>: Respecto a la orientacion de las imagenes, es &quot;inmune&quot; a esta. Se utilizan filtros de HAAR para generar una respuesta que es ponderada utilizando una Gaussiana segun distancia al punto de ineteres para todas kas muestras en la vecindad circular.</p>
+<p>Pasos del Descriptor (SURF): - constru´ır region cuadrada centrada en el punto de interes y orientada seguun la orientaci´on seleccionada previamente. - Tamaño de la ventana de 20s. - Region dividida en 4 × 4 sub-regiones cuadradas. - Para cada sub-region, computar filtros de Haar en 5 × 5 puntos de muestra equiespaciados. - Respuestas horizontal dx y vertical dy , ponderadas por Gaussiana centrada en punto de interes. - Filtros Haar orientados seg´un orientaci´on de la region. - Cada respuesta dx y dy es sumada sobre cada sub-region. - Tambien se calculan |dx| y |dy| (polaridad de cambios de intensidad). Entonces, cada sub-region representada por vector descriptor <span class="math">\(v\)</span>de 4D: <span class="math">\[ v = (\sum d_{x}, \sum d_{y},\sum |d_{x}|, \sum |d_y|) \]</span></p>
+<div class="figure">
+<img src="SURF.png" alt="fast image" />
+<p class="caption">fast image</p>
+</div>
+<ul>
+<li>Descriptor final se obtiene concatenando <span class="math">\(v\)</span> para todas las 4 × 4 sub-regiones (descriptor de largo 64).</li>
+<li>Filtros de Haar invariantes a offset de iluminacion.</li>
+<li>Invarianza al contraste normalizando el descriptor final a vector unitario.</li>
+</ul>
+<h2 id="template-matching">Template Matching</h2>
+<p>Tecnica para encontrar areas de una imagen que coinciden (match; son similares) a una imagen template (patch). Se necesita imagen fuente y template.</p>
+<div class="figure">
+<img src="template.png" alt="template Matching" />
+<p class="caption">template Matching</p>
+</div>
+<p>Para identificar el area coincidente, es necesario comparar la imagen template (T) con la imagen fuente (I), deslizandola: Mover el patch un pixel a la vez (de izquierda a derecha y de arriba a abajo). En cada posici´on, se calcula una metrica para representar cuan bien o mal existe coincidencia (o cuan similar es el patch a esa area en particular de la imagen fuente).</p>
+<h2 id="feature-matching">Feature Matching</h2>
+<p>consiste en buscar un objeto o un conjunto de objetos en una imagen. Metodos de base <strong>KD-TREES</strong> , metodos populares <strong>BBF</strong> y <strong>FLANN</strong>.</p>
+<h4 id="kd-tress">KD-Tress</h4>
+<p>K-dimensional tree es una a estructura de datos de particionamiento espacial para organizar puntos en un espacio k-dimensional. El kd-tree es un ´arbol binario donde cada nodo es un punto k-dimensional. Cada nodo no hoja genera implicitamente un hiperplano de separacion que divide el espacio en dos (half-spaces). Los puntos a la izquierda de un hiperplano representados por sub-arbol izquierdo y los puntos a la derecha por sub-arbol derecho.</p>
+<div class="figure">
+<img src="kd-tree.png" alt="kd-tree" />
+<p class="caption">kd-tree</p>
+</div>
+<ul>
+<li><strong>NN Search</strong>: Busqueda de vecino mas cercano (Nearest Neighbor Search) en kd-trees
+<ul>
+<li>Comenzando de la raız, descender por el arbol testeando a que lado de cada nodo se encuentra.</li>
+<li>Ir actualizando la distancia mas cercana en la medida que se avanza por el arbol, hasta llegar a un nodo hoja.</li>
+<li>Comenzar ascenso, chequeando si pueden haber puntos al otro lado del plano de corte del nodo actual. Se hace intersectando el hiperplano de corte con una hiperesfera de radio la distancia actualmente mas cercana, centrada en el punto buscado:
+<ul>
+<li>Si hiperesfera cruza el plano (verificable en direccion de eje de corte), podrıa haber puntos mas cercanos al otro lado, y el algoritmo desciende por la otra rama (siguiendo procedimiento previo).</li>
+</ul></li>
+<li>Si no cruza, se continua ascenso, descartando la otra rama.</li>
+</ul></li>
+<li>Termina cuando vuelve a la raız.</li>
+</ul>
+<div class="figure">
+<img src="nn-search.png" alt="nn-search" />
+<p class="caption">nn-search</p>
+</div>
+<p>Como ayuda extra: <a href="https://www.youtube.com/watch?v=Y4ZgLlDfKDg">Video de Kd-Tree</a></p>
+<p>Complejidad:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="center">promedio</th>
+<th align="center">peor caso</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Construccion</td>
+<td align="center"><span class="math">\(O(kn·log(n))\)</span></td>
+<td align="center"><span class="math">\(O(kn·log(n))\)</span></td>
+</tr>
+<tr class="even">
+<td align="left">Busqueda</td>
+<td align="center"><span class="math">\(O(log (n))\)</span></td>
+<td align="center"><span class="math">\(O(n)\)</span></td>
+</tr>
+</tbody>
+</table>
+<h4 id="kd-tress---best-bin-first-bbf">KD-Tress - Best Bin First (BBF)</h4>
+<p>Encuentra solucion aproximada a NN Search en espacios de muy alta dimensionalidad. Es un variante de kd-tree aproximado que retorna vecino mas cercano en la mayoria de los casos. Se diferencia de KD-Tree pues en el Ascenso (regreso) en el arbol se realiza mediante una cola de prioridad basada en cercania. BBF es mas rapido que kd-tree.</p>
+<h4 id="kd-tress---flann">KD-Tress - FLANN</h4>
+<p>Algoritmo que utiliza los mejores dos algoritmos encontrados: <strong>hierarchical k-means tree modificado</strong> y <strong>randomized kd-trees</strong>.</p>
+<ul>
+<li><strong>Randomized KD-Tress</strong>:
+<ul>
+<li>Se crean varios arboles</li>
+<li>Se escoge la dimensi´on de corte aleatoriamente entre las primeras <span class="math">\(D\)</span> dimensiones de mayor varianza.</li>
+<li>En FLANN utilizan D = 5.</li>
+<li>Para b´usqueda, se mantiene una cola de prioridad entre todos los arboles para que la b´usqueda se ordene seg´un proximidad de los bins.</li>
+</ul></li>
+<li><strong>Hierarchical k-means Tree</strong>:
+<ul>
+<li>Dividir los puntos en cada nivel en K regiones mediante k-means clustering.</li>
+<li>Continuar recursivamente para los puntos de cada region.</li>
+<li>Detener recursi´on cuando n´umero de puntos en region menor que K</li>
+</ul></li>
+</ul>
+<p>Existe una variante de este ultimo (revisar ppt).</p>
+<h2 id="flujo-optico">Flujo Optico</h2>
+<p>Estima movimiento entre dos imagenes consecutivas sin conocimiento previo. Los metodos de ujo optico calculan el movimiento entre dos imagenes de una secuencia, capturadas en tiempos <span class="math">\(t-1\)</span> y <span class="math">\(t\)</span>.</p>
+<ul>
+<li><strong>Sparse optical flow</strong>: Manera de especi car de antemano el subconjunto de puntos a seguir. La idea es obtener un seguimiento relativamente robusto y confiable.</li>
+</ul>
+<h3 id="flujo-optico---lucas-kanade-lk">Flujo Optico - Lucas Kanade (LK)</h3>
+<p>Es un metodo sparse, que se aplica a un subconjunto de puntos en la imagen y se basa en informacion local. Esta informacion local es derivada de una pequeña ventana alrededor de cada punto de interes.</p>
+<p>Algunos supuestos de (LK) : - Brillo constante - Persistencia Temporal - Coherencia espacial.</p>
+<h4 id="funcionamiento-lk">Funcionamiento (LK)</h4>
+<p>Persistencia Temporal (pequeños movimientos): Caso 1D:</p>
+<p>ecuacion optical flow para 1D: <span class="math">\[
+v = -\frac{I_t}{I_x}
+\]</span></p>
+<h4 id="d---2d">1D -&gt; 2D</h4>
+<p>Para pasar de 1D a 2D se debe cumplir: <span class="math">\(I_xu + I_yv + I_t = 0\)</span> con <span class="math">\(u\)</span> velocidad en direccion de <span class="math">\(x\)</span> y <span class="math">\(v\)</span> velocidad en direccion de <span class="math">\(y\)</span>. Una ecuacion y dos incognitas no se puede resolver asi, sugerencia, considerar el componente de movimiento que sea perpendicular a la linea descrita por la ecuacion de flujo (problema d eapertura).</p>
+<h4 id="problema-de-apertura">Problema de apertura</h4>
+<p>consiste en que una lectura local de la velocidad de un contorno orientado es inherentemente ambigua y dependiendo de las dimensiones de la apertura se percibe el movimiento en distintas direcciones. Es asi como el problema se resuelve considerando mas de un pixel asumiendo que todos los pixeles cercanos se mueven coherentemente. En resumen, se permite resolver el problema de movimiento del pixel central considerando el movimiento de los pixeles vecinos (generando un sistenma de ecuaciones). Para ello entonces se deben tener buenas caracteristicas a seguir (malas caracteristicas son bajo contraste y bordes).</p>
+</body>
+</html>
